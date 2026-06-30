@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0" />
+<title>상황 카드 · 개인 집단토론</title>
+<style>
+  :root{
+    --yellow:#FBD03F;
+    --yellow-soft:#FFF6BF;
+    --yellow-line:#F6DE5A;
+    --ink:#2c2925;
+    --ink-2:#6c655c;
+    --ink-faint:#9b9389;
+    --white:#ffffff;
+    --line:#ece4d3;
+    --soft:#fffdf5;
+    --shadow:0 2px 4px rgba(60,50,30,.05), 0 26px 50px -24px rgba(60,50,30,.30);
+    --radius:12px;
+    --ac:var(--ink);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;min-height:100%;}
+  body{
+    font-family:"Malgun Gothic","맑은 고딕",-apple-system,"Apple SD Gothic Neo",sans-serif;
+    color:var(--ink);
+    background:var(--yellow);
+    letter-spacing:-.01em;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+    padding:max(20px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+  }
+  .jua{font-family:"Malgun Gothic","맑은 고딕",-apple-system,"Apple SD Gothic Neo",sans-serif;font-weight:700;letter-spacing:-.01em;}
+
+  .panel{
+    position:relative;max-width:1060px;margin:0 auto;background:var(--white);
+    border-radius:22px;box-shadow:var(--shadow);
+    padding:clamp(26px,3.6vw,46px);min-height:calc(100vh - 48px);
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+  .star{position:absolute;color:var(--yellow);filter:drop-shadow(0 2px 0 var(--yellow-line));pointer-events:none;}
+  .star.s1{bottom:34px;right:44px;width:32px;transform:rotate(12deg);}
+  .star.s2{bottom:78px;right:92px;width:18px;transform:rotate(-14deg);opacity:.8;}
+
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:22px;}
+  .pill{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:#fff;
+    font-size:13px;font-weight:700;letter-spacing:.02em;border-radius:999px;padding:8px 16px;}
+  .pill .role{background:var(--yellow);color:var(--ink);border-radius:999px;padding:1px 9px;font-size:12px;font-weight:800;}
+  .crumbs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:700;color:var(--ink);
+    background:var(--soft);border:1.5px solid var(--line);border-radius:999px;padding:7px 14px;cursor:pointer;}
+  .chip .dot{width:9px;height:9px;border-radius:50%;}
+  .btn-text{appearance:none;border:none;background:none;font:inherit;color:var(--ink-2);font-weight:700;
+    font-size:13.5px;cursor:pointer;padding:8px 8px;border-radius:10px;}
+  .btn-text:hover{color:var(--ink);}
+  .btn-text:focus-visible{outline:2.5px solid var(--ink);outline-offset:2px;}
+
+  .view{display:none;flex:1;animation:in .42s cubic-bezier(.2,.7,.2,1) both;}
+  .view.active{display:flex;flex-direction:column;}
+  @keyframes in{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+  .h{font-size:clamp(30px,4.4vw,46px);line-height:1.12;margin:6px 0 6px;color:var(--ink);}
+  .sub{font-size:15.5px;color:var(--ink-2);margin:0 0 26px;font-weight:500;}
+  .sub b{color:var(--ink);font-weight:700;}
+
+  .themes{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .theme{position:relative;text-align:left;cursor:pointer;background:var(--soft);
+    border:1.5px solid var(--line);border-radius:var(--radius);padding:26px 24px;overflow:hidden;
+    transition:transform .18s ease,box-shadow .25s ease,border-color .2s;animation:pop .5s cubic-bezier(.2,.7,.2,1) both;}
+  .theme:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--ink);background:#fff;}
+  .theme:active{transform:translateY(-1px) scale(.995);}
+  .theme:focus-visible{outline:3px solid var(--ink);outline-offset:3px;}
+  .theme .t-name{font-size:clamp(23px,2.7vw,30px);}
+  .theme .t-sub{font-size:14px;color:var(--ink-2);margin-top:8px;font-weight:500;line-height:1.5;}
+  .theme .go{position:absolute;right:20px;bottom:20px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+    background:color-mix(in srgb,var(--ac) 14%,#fff);color:var(--ac);transition:.2s;}
+  .theme:hover .go{background:var(--ac);color:#fff;transform:translateX(3px);}
+  .theme .go svg{width:18px;height:18px;}
+  @keyframes pop{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .card{position:relative;cursor:pointer;display:flex;flex-direction:column;text-align:left;
+    background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);padding:22px 22px 20px;overflow:hidden;
+    transition:transform .18s ease,box-shadow .25s ease,border-color .2s;animation:deal .5s cubic-bezier(.2,.75,.2,1) both;}
+  .card:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--ink);}
+  .card:active{transform:translateY(-1px) scale(.99);}
+  .card:focus-visible{outline:3px solid var(--ink);outline-offset:3px;}
+  .card .badge{width:42px;height:42px;border-radius:10px;background:var(--ink);color:#fff;
+    display:grid;place-items:center;font-size:22px;margin:6px 0 14px;}
+  .card .stext{font-size:clamp(15px,1.55vw,17px);line-height:1.55;font-weight:600;color:var(--ink);flex:1;}
+  .card .pick{margin-top:16px;display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:var(--ink);}
+  .card .pick svg{width:16px;height:16px;}
+  @keyframes deal{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:none;}}
+
+  .reveal{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+  .reveal .body{padding:clamp(24px,3.4vw,42px);}
+  .rev-head{display:flex;align-items:center;gap:10px;margin-bottom:22px;flex-wrap:wrap;}
+  .tag{font-size:13px;font-weight:800;color:#fff;background:var(--ac);border-radius:999px;padding:7px 14px;}
+  .tag.ghost{color:var(--ac);background:color-mix(in srgb,var(--ac) 14%,#fff);}
+  .label{font-size:12px;letter-spacing:.15em;text-transform:uppercase;font-weight:800;color:var(--ink-2);margin:0 0 10px;}
+  .situation{font-size:clamp(20px,2.5vw,28px);line-height:1.5;font-weight:700;letter-spacing:-.02em;margin:0;color:var(--ink);}
+  .rule{height:1.5px;background:var(--line);margin:28px 0;}
+  .dirs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;}
+  .dirs li{display:flex;gap:14px;font-size:clamp(16px,1.9vw,20px);line-height:1.5;font-weight:500;color:#3a352f;}
+  .dirs li .mk{flex:0 0 auto;width:28px;height:28px;border-radius:9px;background:color-mix(in srgb,var(--ac) 15%,#fff);
+    color:var(--ac);font-weight:800;font-size:14px;display:grid;place-items:center;margin-top:1px;}
+  .note{margin-top:28px;padding:18px 20px;border-radius:12px;background:var(--yellow-soft);
+    border:1.5px solid var(--yellow-line);font-size:clamp(15px,1.7vw,17px);color:var(--ink);font-weight:600;line-height:1.55;
+    display:flex;gap:12px;align-items:center;}
+  .note .ic{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--ink);color:var(--yellow);
+    display:grid;place-items:center;font-weight:800;font-size:16px;}
+  .actions{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap;}
+  .btn{appearance:none;font:inherit;cursor:pointer;border-radius:12px;padding:14px 24px;font-weight:800;font-size:15px;
+    border:2px solid var(--line);background:#fff;color:var(--ink);transition:transform .15s,background .2s,border-color .2s;}
+  .btn:hover{background:var(--soft);}
+  .btn:active{transform:translateY(1px);}
+  .btn:focus-visible{outline:3px solid var(--ink);outline-offset:2px;}
+  .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .btn.primary:hover{background:#000;}
+
+  footer{margin-top:auto;padding-top:28px;text-align:center;font-size:12.5px;color:var(--ink-faint);font-weight:600;}
+
+  @media (max-width:760px){
+    .themes{grid-template-columns:1fr;}
+    .cards{grid-template-columns:1fr;}
+    .star{display:none;}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+</head>
+<body>
+<div class="panel">
+  <div class="topbar">
+    <div class="pill"><span class="role" id="rolePill">운영진</span><span id="pillText">2026 카카오 제주 임팩트 챌린지 with 제주대학교</span></div>
+    <div class="crumbs" id="crumbs"></div>
+  </div>
+
+  <section class="view active" id="view-home">
+    <h1 class="h jua">개인 지원자 토론 주제 선정</h1>
+    <div class="themes" id="themeGrid"></div>
+  </section>
+
+  <section class="view" id="view-cards">
+    <h1 class="h jua" id="cardsTitle"></h1>
+    <p class="sub">세 가지 상황 중 <b>토론하고 싶은 하나</b>를 골라 주세요.</p>
+    <div class="cards" id="cardGrid"></div>
+  </section>
+
+  <section class="view" id="view-reveal">
+    <div class="reveal" id="revealCard">
+      <div class="body">
+        <div class="rev-head" id="revHead"></div>
+        <p class="label">상황</p>
+        <p class="situation" id="revSituation"></p>
+        <div class="rule"></div>
+        <p class="label">토론 방향</p>
+        <ul class="dirs" id="revDirs"></ul>
+        <div class="note">
+          <span class="ic">?</span>
+          <span>단순히 해결책을 찾는 것이 아닌, 문제의 본질을 찾고 <b>&lsquo;왜?&rsquo;</b>를 고민해 보세요.</span>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="btnReCard">← 상황 카드 다시 보기</button>
+          <button class="btn" id="btnReTheme">주제 선택으로</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const THEMES = [
+  { id:"economy",   name:"지역경제",   sub:"일자리 · 상권 활성화 · 스마트팜 · 창업" },
+  { id:"balance",   name:"지역 불균형", sub:"교통망 · 의료 공백 · 교육" },
+  { id:"population", name:"인구 문제",   sub:"고령화 · 청년 유출 · 돌봄" },
+  { id:"climate",   name:"기후 위기",   sub:"탄소중립 · 에너지" },
+];
+const CARDS = {
+  economy:[
+    { label:"A", situation:"제주에서 나고 자란 청년이 고향에 작은 가게를 열었지만 1년 만에 문을 닫았다. 본인은 “열심히 했는데 왜 안 됐는지 모르겠다”고 한다.",
+      dirs:["이 청년은 왜 실패의 원인을 자기 자신에게서만 찾고 있을까?","‘개인의 노력 부족’으로 보면 무엇을 놓치는가? 왜 이런 폐업이 반복될까?","다른 청년에게도 이 일이 똑같이 일어난다면, 가장 근본적인 원인은 무엇인가?"] },
+    { label:"B", situation:"제주 구도심의 한 골목이 ‘SNS 핫플’로 떴다가 2~3년 만에 다시 한산해졌다. 임대료만 오르고, 오래된 동네 가게들은 하나둘 떠났다.",
+      dirs:["골목이 다시 한산해진 게 왜 문제인가? 누가 가장 손해를 봤는가?","골목은 한산해진 채 임대료만 올랐다면, 왜 그런 구조가 생겼을까?","‘뜨고 식는’ 일이 반복되는 가장 근본적인 이유는 무엇인가?"] },
+    { label:"C", situation:"제주 농가에 스마트팜 설비가 지원금으로 들어왔지만, 정작 고령 농가에서는 쓸 줄을 몰라서 방치되고 있다.",
+      dirs:["좋은 기술이 들어왔는데도 쓰이지 않는 이유는 무엇일까?","이 문제는 ‘농민이 디지털에 약해서’로 충분히 설명되는가?","지원이 현장에 닿지 않는 진짜 원인은 무엇인가?"] },
+  ],
+  balance:[
+    { label:"A", situation:"제주도는 대중교통 개편을 위해 노선 신설·요금 조정 등 다양한 시도를 했지만, 이용자는 여전히 불편함을 느낀다.",
+      dirs:["개선을 분명히 했는데 왜 이용자는 체감하지 못하는가?","불편하다는 말 뒤에 숨은 진짜 문제는 무엇이고, 누구의 불편이 가장 큰가?","행정의 노력과 체감 사이의 간극은 왜 자꾸 생기며, 근본적인 문제는 무엇인가?"] },
+    { label:"B", situation:"제주 외곽 마을의 70대 어르신은 종합병원에 가려면 버스를 두 번 갈아타고 1시간 반이 걸린다. 그래서 웬만큼 아파도 그냥 참는다.",
+      dirs:["어르신은 왜 아픈데도 참는 것을 합리적인 선택이라고 여기게 됐을까?","‘교통이 불편해서’로만 보면 무엇을 놓치는가? 왜 그냥 참게 되는가?","누가 가장 위험하고, 그 뿌리 원인은 무엇인가?"] },
+    { label:"C", situation:"제주 읍면의 한 작은 초등학교가 전교생 20명도 안 돼 통폐합 대상에 올랐다. 학교가 문을 닫으면 그나마 남아 있던 젊은 가구마저 마을을 떠난다.",
+      dirs:["작은 학교가 사라지는 게 왜 교육시설 하나가 사라지는 것 이상의 문제인가?","효율로만 보면 무엇을 놓치는가? 왜 악순환이 생기는가?","마을과 학교가 함께 무너지는 근본 원인은 무엇인가?"] },
+  ],
+  population:[
+    { label:"A", situation:"제주 출신 동기 대부분이 졸업하면 제주로 안 돌아갈 것이라고 말하는데, 이유를 물으면 “그냥 다들 안 가니까”처럼 모호하게 답한다.",
+      dirs:["‘그냥’이라는 답이 왜 문제 신호인가? 그 뒤엔 무엇이 있을까?","청년 유출은 왜 일자리만의 문제가 아닌가? 다른 층위의 원인은?","청년이 떠나는 가장 근본적인 이유는 무엇인가?"] },
+    { label:"B", situation:"제주의 한 마을은 주민 절반 이상이 65세 이상이다. 빈집은 늘어 가는데, 그 마을에 살고 싶다는 청년이 나타나도 선뜻 정착하지 못한다.",
+      dirs:["빈집도 있고 올 사람도 있는데, 왜 정작 연결은 아무도 못 시키고 있을까?","‘청년이 안 와서’가 아니라 ‘와도 못 머물러서’라면, 왜 못 머무는가?","정착을 막는 가장 근본적인 원인은 무엇인가?"] },
+    { label:"C", situation:"제주로 귀촌한 젊은 부부가 동네에 잘 섞이지 못한다. 마을 모임에 가도 늘 ‘외지 사람’으로 불리고, 몇 년이 지나도 ‘우리 마을 사람’이 되지 못한다.",
+      dirs:["‘외지 사람’으로 머무는 것이 왜 문제인가?","인구를 머릿수로만 보면 무엇을 놓치는가? 왜 못 섞이는가?","진짜 정착을 막는 뿌리 원인은 무엇인가?"] },
+  ],
+  climate:[
+    { label:"A", situation:"제주에 기록적 폭우로 한 마을이 고립됐다. 매년 비슷한 일이 반복되는데도 다음 해 또 같은 상황이 벌어진다.",
+      dirs:["매년 겪고도 왜 다음 해에 다시 같은 일이 벌어질까?","기후의 탓으로 돌리면 무엇을 놓치는가? 왜 대비가 안 되는가?","가장 먼저·크게 힘든 사람은 누구이며 왜인가?"] },
+    { label:"B", situation:"제주는 전기차 보급률이 전국 최고 수준이다. 그런데 폐배터리 처리, 충전 인프라 쏠림 같은 그 다음 문제는 잘 보이지 않는다.",
+      dirs:["그 다음 문제가 그늘이라고 여겨지는 이유는 무엇인가?","전기차 보급률이 높은 것만을 성과로만 보면 무엇을 놓치는가?","‘다음 문제’가 방치되는 근본 원인은 무엇인가?"] },
+    { label:"C", situation:"제주의 한 마을은 관광 성수기마다 쓰레기 배출량이 평소의 몇 배로 치솟는다. 정작 분리수거장을 관리하고 치우는 건 그 동네 주민들이다.",
+      dirs:["만드는 사람과 치우는 사람이 다른 게 왜 문제인가?","단순히 쓰레기가 많은 것만을 문제로 보면 무엇을 놓치는가? 왜 하필 주민이 떠안는가?","이 부담 구조가 굳어진 가장 근본적인 원인은 무엇인가?"] },
+  ],
+};
+
+const views = { home:el("view-home"), cards:el("view-cards"), reveal:el("view-reveal") };
+let current = null;
+function el(id){return document.getElementById(id);}
+
+function show(view){
+  Object.values(views).forEach(v=>v.classList.remove("active"));
+  views[view].classList.add("active");
+  window.scrollTo({top:0});
+  el("rolePill").textContent = (view==="home") ? "운영진" : "지원자";
+  renderCrumbs(view);
+}
+function renderCrumbs(view){
+  const c = el("crumbs"); c.innerHTML="";
+  if(view==="home") return;
+  if(current && current.theme){
+    const t=current.theme;
+    const chip=document.createElement("button");
+    chip.className="chip";
+    chip.innerHTML=`<span class="dot" style="background:var(--ink)"></span>${t.name}`;
+    chip.addEventListener("click",goHome);
+    c.appendChild(chip);
+  }
+  const reset=document.createElement("button");
+  reset.className="btn-text"; reset.textContent="처음으로";
+  reset.addEventListener("click",goHome);
+  c.appendChild(reset);
+}
+
+const grid=el("themeGrid");
+THEMES.forEach((t,i)=>{
+  const e=document.createElement("button");
+  e.className="theme"; e.style.animationDelay=(i*70)+"ms";
+  e.innerHTML=`<div class="t-name jua">${t.name}</div><div class="t-sub">${t.sub}</div>
+    <span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>`;
+  e.setAttribute("aria-label",t.name+" 주제 선택");
+  e.addEventListener("click",()=>openTheme(t));
+  grid.appendChild(e);
+});
+
+function openTheme(theme){
+  current={theme,cardIndex:null};
+  el("cardsTitle").textContent = theme.name + " · 상황 카드";
+  const cg=el("cardGrid"); cg.innerHTML="";
+  CARDS[theme.id].forEach((card,idx)=>{
+    const e=document.createElement("button");
+    e.className="card"; e.style.animationDelay=(idx*90)+"ms";
+    e.innerHTML=`<div class="badge jua">${card.label}</div>
+      <div class="stext">${card.situation}</div>
+      <div class="pick">이 상황으로 토론하기
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>`;
+    e.setAttribute("aria-label","상황 "+card.label+" 선택");
+    e.addEventListener("click",()=>openReveal(idx));
+    cg.appendChild(e);
+  });
+  show("cards");
+}
+
+function openReveal(idx){
+  current.cardIndex=idx;
+  const t=current.theme, card=CARDS[t.id][idx];
+  el("revHead").innerHTML=`<span class="tag">${t.name}</span><span class="tag ghost">상황 카드 ${card.label}</span>`;
+  el("revSituation").textContent=card.situation;
+  const dl=el("revDirs"); dl.innerHTML="";
+  card.dirs.forEach((d,i)=>{
+    const li=document.createElement("li");
+    li.innerHTML=`<span class="mk">${i+1}</span><span>${d}</span>`;
+    dl.appendChild(li);
+  });
+  show("reveal");
+}
+function goHome(){current=null;show("home");}
+
+el("btnReCard").addEventListener("click",()=>{ if(current&&current.theme) openTheme(current.theme); });
+el("btnReTheme").addEventListener("click",goHome);
+</script>
+</body>
+</html>
